@@ -1,4 +1,4 @@
 #Force non-www:
-RewriteEngine on
-RewriteCond %{HTTP_HOST} ^www\.rocketcitycreative\.com [NC]
-RewriteRule ^(.*)$ http://rocketcitycreative.com/$1 [L,R=301]
+#RewriteEngine on
+#RewriteCond %{HTTP_HOST} ^www\.rocketcitycreative\.com [NC]
+#RewriteRule ^(.*)$ http://rocketcitycreative.com/$1 [L,R=301]
