@@ -1,357 +1,171 @@
 /*
-	Story by HTML5 UP
+	Eventually by HTML5 UP
 	html5up.net | @ajlkn
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
 
-(function($) {
+(function() {
 
-	skel.breakpoints({
-		xlarge: '(max-width: 1680px)',
-		large: '(max-width: 1280px)',
-		medium: '(max-width: 980px)',
-		small: '(max-width: 736px)',
-		xsmall: '(max-width: 480px)',
-		xxsmall: '(max-width: 360px)'
-	});
+	"use strict";
 
-	$(function() {
+	var	$body = document.querySelector('body');
 
-		var	$window = $(window),
-			$body = $('body'),
-			$wrapper = $('#wrapper');
+	// Methods/polyfills.
 
-		// Disable animations/transitions until the page has loaded.
-			$body.addClass('is-loading');
+		// classList | (c) @remy | github.com/remy/polyfills | rem.mit-license.org
+			!function(){function t(t){this.el=t;for(var n=t.className.replace(/^\s+|\s+$/g,"").split(/\s+/),i=0;i<n.length;i++)e.call(this,n[i])}function n(t,n,i){Object.defineProperty?Object.defineProperty(t,n,{get:i}):t.__defineGetter__(n,i)}if(!("undefined"==typeof window.Element||"classList"in document.documentElement)){var i=Array.prototype,e=i.push,s=i.splice,o=i.join;t.prototype={add:function(t){this.contains(t)||(e.call(this,t),this.el.className=this.toString())},contains:function(t){return-1!=this.el.className.indexOf(t)},item:function(t){return this[t]||null},remove:function(t){if(this.contains(t)){for(var n=0;n<this.length&&this[n]!=t;n++);s.call(this,n,1),this.el.className=this.toString()}},toString:function(){return o.call(this," ")},toggle:function(t){return this.contains(t)?this.remove(t):this.add(t),this.contains(t)}},window.DOMTokenList=t,n(Element.prototype,"classList",function(){return new t(this)})}}();
 
-			$window.on('load', function() {
-				window.setTimeout(function() {
-					$body.removeClass('is-loading');
-				}, 100);
-			});
+		// canUse
+			window.canUse=function(p){if(!window._canUse)window._canUse=document.createElement("div");var e=window._canUse.style,up=p.charAt(0).toUpperCase()+p.slice(1);return p in e||"Moz"+up in e||"Webkit"+up in e||"O"+up in e||"ms"+up in e};
 
-		// Fix: Placeholder polyfill.
-			$('form').placeholder();
+		// window.addEventListener
+			(function(){if("addEventListener"in window)return;window.addEventListener=function(type,f){window.attachEvent("on"+type,f)}})();
 
-		// Prioritize "important" elements on medium.
-			skel.on('+medium -medium', function() {
-				$.prioritize(
-					'.important\\28 medium\\29',
-					skel.breakpoint('medium').active
-				);
-			});
+	// Play initial animations on page load.
+		window.addEventListener('load', function() {
+			window.setTimeout(function() {
+				$body.classList.remove('is-preload');
+			}, 100);
+		});
 
-		// Browser fixes.
+	// Slideshow Background.
+		(function() {
 
-			// IE: Flexbox min-height bug.
-				if (skel.vars.browser == 'ie')
-					(function() {
+			// Settings.
+				var settings = {
 
-						var flexboxFixTimeoutId;
+					// Images (in the format of 'url': 'alignment').
+						images: {
+							'images/bg01.jpg': 'center',
+							'images/bg02.jpg': 'center',
+							'images/bg03.jpg': 'center'
+						},
 
-						$window.on('resize.flexbox-fix', function() {
+					// Delay.
+						delay: 6000
 
-							var $x = $('.fullscreen');
+				};
 
-							clearTimeout(flexboxFixTimeoutId);
+			// Vars.
+				var	pos = 0, lastPos = 0,
+					$wrapper, $bgs = [], $bg,
+					k, v;
 
-							flexboxFixTimeoutId = setTimeout(function() {
+			// Create BG wrapper, BGs.
+				$wrapper = document.createElement('div');
+					$wrapper.id = 'bg';
+					$body.appendChild($wrapper);
 
-								if ($x.prop('scrollHeight') > $window.height())
-									$x.css('height', 'auto');
-								else
-									$x.css('height', '100vh');
+				for (k in settings.images) {
 
-							}, 250);
+					// Create BG.
+						$bg = document.createElement('div');
+							$bg.style.backgroundImage = 'url("' + k + '")';
+							$bg.style.backgroundPosition = settings.images[k];
+							$wrapper.appendChild($bg);
 
-						}).triggerHandler('resize.flexbox-fix');
+					// Add it to array.
+						$bgs.push($bg);
 
-					})();
+				}
 
-			// Object fit workaround.
-				if (!skel.canUse('object-fit'))
-					(function() {
+			// Main loop.
+				$bgs[pos].classList.add('visible');
+				$bgs[pos].classList.add('top');
 
-						$('.banner .image, .spotlight .image').each(function() {
+				// Bail if we only have a single BG or the client doesn't support transitions.
+					if ($bgs.length == 1
+					||	!canUse('transition'))
+						return;
 
-							var $this = $(this),
-								$img = $this.children('img'),
-								positionClass = $this.parent().attr('class').match(/image-position-([a-z]+)/);
+				window.setInterval(function() {
 
-							// Set image.
-								$this
-									.css('background-image', 'url("' + $img.attr('src') + '")')
-									.css('background-repeat', 'no-repeat')
-									.css('background-size', 'cover');
+					lastPos = pos;
+					pos++;
 
-							// Set position.
-								switch (positionClass.length > 1 ? positionClass[1] : '') {
+					// Wrap to beginning if necessary.
+						if (pos >= $bgs.length)
+							pos = 0;
 
-									case 'left':
-										$this.css('background-position', 'left');
-										break;
+					// Swap top images.
+						$bgs[lastPos].classList.remove('top');
+						$bgs[pos].classList.add('visible');
+						$bgs[pos].classList.add('top');
 
-									case 'right':
-										$this.css('background-position', 'right');
-										break;
+					// Hide last image after a short delay.
+						window.setTimeout(function() {
+							$bgs[lastPos].classList.remove('visible');
+						}, settings.delay / 2);
 
-									default:
-									case 'center':
-										$this.css('background-position', 'center');
-										break;
+				}, settings.delay);
 
-								}
+		})();
 
-							// Hide original.
-								$img.css('opacity', '0');
+	// Signup Form.
+		(function() {
 
-						});
+			// Vars.
+				var $form = document.querySelectorAll('#signup-form')[0],
+					$submit = document.querySelectorAll('#signup-form input[type="submit"]')[0],
+					$message;
 
-					})();
+			// Bail if addEventListener isn't supported.
+				if (!('addEventListener' in $form))
+					return;
 
-		// Smooth scroll.
-			$('.smooth-scroll').scrolly();
-			$('.smooth-scroll-middle').scrolly({ anchor: 'middle' });
+			// Message.
+				$message = document.createElement('span');
+					$message.classList.add('message');
+					$form.appendChild($message);
 
-		// Wrapper.
-			$wrapper.children()
-				.scrollex({
-					top:		'30vh',
-					bottom:		'30vh',
-					initialize:	function() {
-						$(this).addClass('is-inactive');
-					},
-					terminate:	function() {
-						$(this).removeClass('is-inactive');
-					},
-					enter:		function() {
-						$(this).removeClass('is-inactive');
-					},
-					leave:		function() {
+				$message._show = function(type, text) {
 
-						var $this = $(this);
+					$message.innerHTML = text;
+					$message.classList.add(type);
+					$message.classList.add('visible');
 
-						if ($this.hasClass('onscroll-bidirectional'))
-							$this.addClass('is-inactive');
+					window.setTimeout(function() {
+						$message._hide();
+					}, 3000);
 
-					}
+				};
+
+				$message._hide = function() {
+					$message.classList.remove('visible');
+				};
+
+			// Events.
+			// Note: If you're *not* using AJAX, get rid of this event listener.
+				$form.addEventListener('submit', function(event) {
+
+					event.stopPropagation();
+					event.preventDefault();
+
+					// Hide message.
+						$message._hide();
+
+					// Disable submit.
+						$submit.disabled = true;
+
+					// Process form.
+					// Note: Doesn't actually do anything yet (other than report back with a "thank you"),
+					// but there's enough here to piece together a working AJAX submission call that does.
+						window.setTimeout(function() {
+
+							// Reset form.
+								$form.reset();
+
+							// Enable submit.
+								$submit.disabled = false;
+
+							// Show message.
+								$message._show('success', 'Thank you!');
+								//$message._show('failure', 'Something went wrong. Please try again.');
+
+						}, 750);
+
 				});
 
-		// Items.
-			$('.items')
-				.scrollex({
-					top:		'30vh',
-					bottom:		'30vh',
-					delay:		50,
-					initialize:	function() {
-						$(this).addClass('is-inactive');
-					},
-					terminate:	function() {
-						$(this).removeClass('is-inactive');
-					},
-					enter:		function() {
-						$(this).removeClass('is-inactive');
-					},
-					leave:		function() {
+		})();
 
-						var $this = $(this);
-
-						if ($this.hasClass('onscroll-bidirectional'))
-							$this.addClass('is-inactive');
-
-					}
-				})
-				.children()
-					.wrapInner('<div class="inner"></div>');
-
-		// Gallery.
-			$('.gallery')
-				.wrapInner('<div class="inner"></div>')
-				.prepend(skel.vars.mobile ? '' : '<div class="forward"></div><div class="backward"></div>')
-				.scrollex({
-					top:		'30vh',
-					bottom:		'30vh',
-					delay:		50,
-					initialize:	function() {
-						$(this).addClass('is-inactive');
-					},
-					terminate:	function() {
-						$(this).removeClass('is-inactive');
-					},
-					enter:		function() {
-						$(this).removeClass('is-inactive');
-					},
-					leave:		function() {
-
-						var $this = $(this);
-
-						if ($this.hasClass('onscroll-bidirectional'))
-							$this.addClass('is-inactive');
-
-					}
-				})
-				.children('.inner')
-					//.css('overflow', 'hidden')
-					.css('overflow-y', skel.vars.mobile ? 'visible' : 'hidden')
-					.css('overflow-x', skel.vars.mobile ? 'scroll' : 'hidden')
-					.scrollLeft(0);
-
-			// Style #1.
-				// ...
-
-			// Style #2.
-				$('.gallery')
-					.on('wheel', '.inner', function(event) {
-
-						var	$this = $(this),
-							delta = (event.originalEvent.deltaX * 10);
-
-						// Cap delta.
-							if (delta > 0)
-								delta = Math.min(25, delta);
-							else if (delta < 0)
-								delta = Math.max(-25, delta);
-
-						// Scroll.
-							$this.scrollLeft( $this.scrollLeft() + delta );
-
-					})
-					.on('mouseenter', '.forward, .backward', function(event) {
-
-						var $this = $(this),
-							$inner = $this.siblings('.inner'),
-							direction = ($this.hasClass('forward') ? 1 : -1);
-
-						// Clear move interval.
-							clearInterval(this._gallery_moveIntervalId);
-
-						// Start interval.
-							this._gallery_moveIntervalId = setInterval(function() {
-								$inner.scrollLeft( $inner.scrollLeft() + (5 * direction) );
-							}, 10);
-
-					})
-					.on('mouseleave', '.forward, .backward', function(event) {
-
-						// Clear move interval.
-							clearInterval(this._gallery_moveIntervalId);
-
-					});
-
-			// Lightbox.
-				$('.gallery.lightbox')
-					.on('click', 'a', function(event) {
-
-						var $a = $(this),
-							$gallery = $a.parents('.gallery'),
-							$modal = $gallery.children('.modal'),
-							$modalImg = $modal.find('img'),
-							href = $a.attr('href');
-
-						// Not an image? Bail.
-							if (!href.match(/\.(jpg|gif|png|mp4)$/))
-								return;
-
-						// Prevent default.
-							event.preventDefault();
-							event.stopPropagation();
-
-						// Locked? Bail.
-							if ($modal[0]._locked)
-								return;
-
-						// Lock.
-							$modal[0]._locked = true;
-
-						// Set src.
-							$modalImg.attr('src', href);
-
-						// Set visible.
-							$modal.addClass('visible');
-
-						// Focus.
-							$modal.focus();
-
-						// Delay.
-							setTimeout(function() {
-
-								// Unlock.
-									$modal[0]._locked = false;
-
-							}, 600);
-
-					})
-					.on('click', '.modal', function(event) {
-
-						var $modal = $(this),
-							$modalImg = $modal.find('img');
-
-						// Locked? Bail.
-							if ($modal[0]._locked)
-								return;
-
-						// Already hidden? Bail.
-							if (!$modal.hasClass('visible'))
-								return;
-
-						// Lock.
-							$modal[0]._locked = true;
-
-						// Clear visible, loaded.
-							$modal
-								.removeClass('loaded')
-
-						// Delay.
-							setTimeout(function() {
-
-								$modal
-									.removeClass('visible')
-
-								setTimeout(function() {
-
-									// Clear src.
-										$modalImg.attr('src', '');
-
-									// Unlock.
-										$modal[0]._locked = false;
-
-									// Focus.
-										$body.focus();
-
-								}, 475);
-
-							}, 125);
-
-					})
-					.on('keypress', '.modal', function(event) {
-
-						var $modal = $(this);
-
-						// Escape? Hide modal.
-							if (event.keyCode == 27)
-								$modal.trigger('click');
-
-					})
-					.prepend('<div class="modal" tabIndex="-1"><div class="inner"><img src="" /></div></div>')
-						.find('img')
-							.on('load', function(event) {
-
-								var $modalImg = $(this),
-									$modal = $modalImg.parents('.modal');
-
-								setTimeout(function() {
-
-									// No longer visible? Bail.
-										if (!$modal.hasClass('visible'))
-											return;
-
-									// Set loaded.
-										$modal.addClass('loaded');
-
-								}, 275);
-
-							});
-
-	});
-
-})(jQuery);
+})();
